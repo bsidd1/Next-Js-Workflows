@@ -3,35 +3,44 @@ name: Next JS Build with Caching & Artifacts
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   optimize-and-package:
     runs-on: ubuntu-latest
     steps:
       - name: 1. Download Code
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v4
 
       - name: 2. Setup Node.js Environment
-        uses: actions/setup-node@v6.4.0
+        uses: actions/setup-node@v4
         with:
-          node-version: 22.x
-          cache: 'npm' # Automatically caches standard project dependencies
+          node-version: 20
+          # 🛑 REMOVED: cache: 'npm' (This was causing your error!)
 
-      # --- THE MAGIC DEV-OPS STEP: CACHING ---
-      - name: 3. Check the "Fridge" for Next.js Cache
+      # --- STEP 3: GENERATE THE APP FIRST ---
+      - name: 3. Generate Next.js App
+        run: |
+          npx create-next-app@latest my-practice-app --ts --eslint --tailwind --src-dir --app --import-alias "@/*" --use-npm
+
+      # --- STEP 4: NOW SET UP THE CACHE ---
+      - name: 4. Check the Fridge for Next.js Cache
         uses: actions/cache@v4
         with:
-          path: .next/cache # What folder are we saving?
-          # A unique key based on the files. If the files didn't change, reuse the cache!
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}
+          path: my-practice-app/.next/cache # Pointing directly inside the new app folder
+          # We use a custom simple key name because there is no lock file in the root directory
+          key: ${{ runner.os }}-nextjs-practice-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-practice-
 
-      - name: 4. Build the App
-        run: npm run build # Next.js will use the cache here if it exists!
+      - name: 5. Build the App
+        run: |
+          cd my-practice-app
+          npm run build
 
-      # --- THE FINISHING STEP: ARTIFACTS ---
-      - name: 5. Put Final Build in a Delivery Box
+      - name: 6. Put Final Build in a Delivery Box
         uses: actions/upload-artifact@v4
         with:
-          name: live-website-package # Name of your delivery box
-          path: .next/                # What files to put in the box
-          retention-days: 7          # Keep the box for 7 days, then delete it to save space
+          name: live-website-package
+          path: my-practice-app/.next/
+          retention-days: 1
