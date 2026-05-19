@@ -9,12 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 1. Download Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: 2. Setup Node.js Environment
-        uses: actions/checkout@v6.0.2
+        uses: actions/setup-node@v6.4.0
         with:
-          node-version: 20
+          node-version: 22.x
           cache: 'npm' # Automatically caches standard project dependencies
 
       # --- THE MAGIC DEV-OPS STEP: CACHING ---
